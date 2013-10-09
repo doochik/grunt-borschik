@@ -14,11 +14,13 @@ module.exports = function(grunt) {
   // creation: http://gruntjs.com/creating-tasks
 
   grunt.registerMultiTask('borschik', 'Build files with Borschik', function() {
+
+    var done = this.async();
+
     // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({
-      punctuation: '.',
-      separator: ', '
-    });
+    var options = this.options({});
+
+    var borschik = require('borschik');
 
     // Iterate over all specified file groups.
     this.files.forEach(function(f) {
@@ -32,18 +34,26 @@ module.exports = function(grunt) {
           return true;
         }
       }).map(function(filepath) {
-        // Read file source.
-        return grunt.file.read(filepath);
-      }).join(grunt.util.normalizelf(options.separator));
 
-      // Handle options.
-      src += options.punctuation;
+        options.input = filepath;
+        options.output = f.dest;
 
-      // Write the destination file.
-      grunt.file.write(f.dest, src);
+        //FIXME: At this time Borschik can use strings as input or output :(
 
-      // Print a success message.
-      grunt.log.writeln('File "' + f.dest + '" created.');
+        borschik
+            .api(options)
+            .then(function() {
+                // Print a success message.
+                grunt.log.writeln('File "' + f.dest + '" created.');
+                done();
+
+            })
+            .fail(function(e) {
+                grunt.log.error(e);
+                done(false);
+            });
+
+      });
     });
   });
 
